@@ -1,0 +1,6 @@
+{
+  "name": "AirLink",
+  "description": "Bidirectional low-latency WebRTC remote desktop and mobile control suite with AccessibilityService gesture injection and MediaProjection screen streaming.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

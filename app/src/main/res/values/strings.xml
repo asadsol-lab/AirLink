@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">AirLink</string>
+    <string name="accessibility_service_label">AirLink Touch Control</string>
+    <string name="accessibility_service_description">Allows AirLink to inject remote mouse clicks, swipes, scrolls, and system navigation gestures when you authorize a remote session.</string>
+
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_remote_player">Remote</string>
+    <string name="nav_setup">Setup &amp; Permissions</string>
+
+    <string name="my_device_title">This Device</string>
+    <string name="device_id_label">Device ID</string>
+    <string name="security_pin_label">Security PIN</string>
+    <string name="copy_credentials">Copy ID</string>
+    <string name="regenerate_pin">New PIN</string>
+    <string name="copied_snackbar">Device ID copied to clipboard</string>
+
+    <string name="connect_device_title">Control Remote Device</string>
+    <string name="target_id_hint">9-digit Target ID</string>
+    <string name="target_pin_hint">4-digit PIN</string>
+    <string name="connect_action">Connect Session</string>
+    <string name="connecting_action">Connecting…</string>
+
+    <string name="recent_devices_title">Recent Devices</string>
+    <string name="recent_devices_empty">No remote sessions yet. Enter a 9-digit Device ID and PIN above to start.</string>
+
+    <string name="auth_dialog_title">Incoming Remote Control</string>
+    <string name="auth_dialog_allow">Allow Control</string>
+    <string name="auth_dialog_deny">Deny</string>
+
+    <string name="capture_notification_channel">AirLink Screen Sharing</string>
+    <string name="capture_notification_title">AirLink Screen Stream Active</string>
+    <string name="capture_notification_text">Sharing display over encrypted WebRTC P2P</string>
+    <string name="emergency_disconnect">Emergency Disconnect</string>
+</resources>

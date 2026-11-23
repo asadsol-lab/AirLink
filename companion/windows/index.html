@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AirLink Desktop</title>
+  <style>
+    :root {
+      --bg: #070B12;
+      --surface: #0F1623;
+      --elevated: #172133;
+      --border: #26334D;
+      --cyan: #00E5FF;
+      --blue: #2979FF;
+      --green: #10B981;
+      --red: #EF4444;
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+    }
+    * { box-sizing: border-box; font-family: "Segoe UI", system-ui, sans-serif; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 22px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .brand span { color: var(--cyan); }
+    .pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--elevated);
+    }
+    .pill.online { color: var(--green); border-color: rgba(16,185,129,0.4); }
+    main {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      flex: 1;
+      min-height: 0;
+    }
+    aside {
+      padding: 18px;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+    .card {
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .mono { font-family: "Cascadia Mono", Consolas, monospace; }
+    .id-big { font-size: 24px; font-weight: 700; color: var(--cyan); letter-spacing: 1px; }
+    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .btn-primary { background: var(--cyan); color: #070B12; }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: var(--red); color: white; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    .stage {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: #000;
+      min-height: 0;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(15, 22, 35, 0.92);
+      border-bottom: 1px solid var(--border);
+    }
+    #remoteVideo {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      outline: none;
+      cursor: crosshair;
+      background: #04060A;
+    }
+    #idleOverlay {
+      position: absolute;
+      inset: 48px 0 0 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      pointer-events: none;
+      text-align: center;
+      padding: 24px;
+    }
+    dialog {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--cyan);
+      border-radius: 18px;
+      padding: 22px;
+      max-width: 400px;
+    }
+    dialog::backdrop { background: rgba(0,0,0,0.72); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Air<span>Link</span> Desktop</div>
+    <div id="relayBadge" class="pill">Relay Disconnected</div>
+  </header>
+
+  <main>
+    <aside>
+      <div class="card">
+        <label>THIS WINDOWS PC ID</label>
+        <div id="localDeviceId" class="id-big mono">--- --- ---</div>
+        <div class="row" style="justify-content: space-between;">
+          <div>
+            <label>SECURITY PIN</label>
+            <div id="localPin" class="mono" style="font-size: 18px; font-weight: 700;">----</div>
+          </div>
+          <button id="regenPinBtn" class="btn-secondary">New PIN</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label>SIGNALING SERVER (WS://)</label>
+        <input id="serverUrlInput" class="mono" placeholder="ws://127.0.0.1:8080" />
+        <button id="connectRelayBtn" class="btn-secondary">Connect Relay</button>
+      </div>
+
+      <div class="card">
+        <label>CONTROL ANDROID PHONE</label>
+        <input id="targetIdInput" class="mono" maxlength="9" placeholder="9-digit Android ID" />
+        <input id="targetPinInput" class="mono" maxlength="4" placeholder="4-digit PIN" />
+        <button id="connectPeerBtn" class="btn-primary">Connect &amp; Control</button>
+      </div>
+
+      <div id="logBox" class="mono" style="font-size: 11px; color: var(--muted); white-space: pre-wrap;"></div>
+    </aside>
+
+    <section class="stage">
+      <div class="toolbar">
+        <div id="sessionLabel" class="mono" style="font-size: 12px; color: var(--muted);">Idle</div>
+        <div class="row">
+          <button id="androidBackBtn" class="btn-secondary">Back</button>
+          <button id="androidHomeBtn" class="btn-secondary">Home</button>
+          <button id="androidRecentsBtn" class="btn-secondary">Recents</button>
+          <button id="disconnectBtn" class="btn-danger">Disconnect (Ctrl+Alt+End)</button>
+        </div>
+      </div>
+      <video id="remoteVideo" autoplay playsinline tabindex="0"></video>
+      <div id="idleOverlay">
+        <h3 style="color: var(--text); margin-bottom: 6px;">Ready for Bidirectional P2P Streaming</h3>
+        <p>Enter your Android phone's 9-digit ID + PIN on the left to control your phone from Windows,<br/>or accept an incoming request from your phone to control this PC.</p>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="authDialog">
+    <h3 style="margin-top: 0;">Incoming Remote Control</h3>
+    <p id="authDesc"></p>
+    <div class="row" style="justify-content: flex-end; margin-top: 16px;">
+      <button id="denyBtn" class="btn-danger">Deny</button>
+      <button id="allowBtn" class="btn-primary">Allow Control</button>
+    </div>
+  </dialog>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

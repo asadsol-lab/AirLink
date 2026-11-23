@@ -1,0 +1,25 @@
+{
+  "name": "airlink-windows-desktop",
+  "version": "1.0.0",
+  "description": "AirLink Windows Desktop Bidirectional WebRTC Host & Controller with Win32 SendInput",
+  "main": "main.js",
+  "scripts": {
+    "build-native": "node-gyp rebuild",
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "dependencies": {
+    "node-gyp": "^10.2.0"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.aistudio.airlink.windows",
+    "productName": "AirLink Desktop",
+    "win": {
+      "target": "nsis"
+    }
+  }
+}
