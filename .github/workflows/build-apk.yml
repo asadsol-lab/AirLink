@@ -1,0 +1,160 @@
+name: Build AirLink Android APK & Windows Desktop App
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Prepare debug.keystore
+        run: |
+          if [ -f "debug.keystore.base64" ]; then
+            base64 -d debug.keystore.base64 > debug.keystore
+          else
+            keytool -genkeypair -v -keystore debug.keystore \
+              -storepass android -alias androiddebugkey -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: Set up Gradle 9.3.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.3.1"
+
+      - name: Build Debug APK
+        run: gradle :app:assembleDebug --no-daemon
+
+      - name: Stage Android APK
+        run: |
+          mkdir -p release_artifacts
+          cp app/build/outputs/apk/debug/app-debug.apk release_artifacts/AirLink-Android.apk
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: release_artifacts/AirLink-Android.apk
+
+  build-windows:
+    name: Build Windows Desktop App
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies & Build Native Addon
+        working-directory: companion/windows
+        run: |
+          npm install
+          npm run build-native
+
+      - name: Build Windows Installer & Portable Executable
+        working-directory: companion/windows
+        run: |
+          npm run dist
+
+      - name: Stage Windows Executables
+        shell: bash
+        run: |
+          mkdir -p win_artifacts
+          cp companion/windows/dist/*.exe win_artifacts/
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: win_artifacts/*.exe
+
+  publish-release:
+    name: Publish Release (APK + Windows EXE)
+    needs: [build-android, build-windows]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Android Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: download/android
+
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-binaries
+          path: download/windows
+
+      - name: Package Release Assets
+        id: prep
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          TAG="v1.0.${{ github.run_number }}-${SHORT_SHA}"
+          mkdir -p final_assets
+
+          # Rename Android APK
+          cp download/android/AirLink-Android.apk "final_assets/AirLink-${TAG}.apk"
+
+          # Rename Windows EXEs
+          for f in download/windows/*.exe; do
+            fname=$(basename "$f")
+            cp "$f" "final_assets/${fname}"
+          done
+
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.prep.outputs.tag }}" \
+            final_assets/* \
+            --title "AirLink ${{ steps.prep.outputs.tag }} (Android + Windows)" \
+            --notes "Automated Multiplatform Release for Android and Windows.
+          
+- **Android APK:** Mobile remote controller & screen capture host.
+- **Windows Desktop:** Complete standalone installer & portable app for PC.
+- **Worldwide WebRTC:** Integrated STUN + TURN relay for cross-country remote control."
+
+      - name: Keep Only Latest 2 Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          OLD_TAGS=$(gh release list --limit 100 --json tagName,createdAt \
+            --jq 'sort_by(.createdAt) | reverse | .[2:] | .[].tagName')
+
+          if [ -n "$OLD_TAGS" ]; then
+            for tag in $OLD_TAGS; do
+              echo "Deleting old release and tag: $tag"
+              gh release delete "$tag" --yes --cleanup-tag || true
+            done
+          else
+            echo "2 or fewer releases exist; nothing to delete."
+          fi

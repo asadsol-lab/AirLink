@@ -1,0 +1,12 @@
+{
+  "name": "airlink-signaling-server",
+  "version": "1.0.0",
+  "description": "AirLink WebSocket Signaling Server for 9-digit Device IDs and WebRTC SDP/ICE relay",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
