@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "AirLink Windows Desktop Bidirectional WebRTC Host & Controller with Win32 SendInput",
   "main": "main.js",
+  "author": "Asad King",
   "scripts": {
     "build-native": "node-gyp rebuild",
     "start": "electron .",
-    "dist": "electron-builder --win nsis portable"
+    "dist": "electron-builder --win nsis portable -c.npmRebuild=false"
   },
   "dependencies": {
     "node-gyp": "^10.2.0"
@@ -18,6 +19,7 @@
   "build": {
     "appId": "com.aistudio.airlink.windows",
     "productName": "AirLink-Desktop",
+    "npmRebuild": false,
     "directories": {
       "output": "dist"
     },

@@ -63,6 +63,11 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Set up MSVC C++ Build Environment
         uses: ilammy/msvc-dev-cmd@v1
 
@@ -76,7 +81,7 @@ jobs:
 
       - name: Build Windows Installer & Portable Executable
         working-directory: companion/windows
-        run: npm run dist
+        run: npm run dist -- -c.npmRebuild=false
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
