@@ -81,7 +81,7 @@ jobs:
 
       - name: Build Windows Installer & Portable Executable
         working-directory: companion/windows
-        run: npm run dist -- -c.npmRebuild=false
+        run: npm run dist
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4

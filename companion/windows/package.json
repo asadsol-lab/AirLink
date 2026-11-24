@@ -7,7 +7,7 @@
   "scripts": {
     "build-native": "node-gyp rebuild",
     "start": "electron .",
-    "dist": "electron-builder --win nsis portable -c.npmRebuild=false"
+    "dist": "electron-builder --win nsis portable"
   },
   "dependencies": {
     "node-gyp": "^10.2.0"
