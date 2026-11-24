@@ -36,6 +36,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import com.google.firebase.Firebase
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.auth
 import org.webrtc.EglBase
 import org.webrtc.PeerConnection
 import org.webrtc.VideoTrack
@@ -559,6 +562,20 @@ class RemoteControlViewModel(application: Application) : AndroidViewModel(applic
 
     fun clearBannerMessage() {
         _statusBannerMessage.value = null
+    }
+
+    fun signInWithGoogle(idToken: String, onResult: (Boolean) -> Unit) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        Firebase.auth.signInWithCredential(credential)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _statusBannerMessage.value = "Signed in successfully with Google"
+                    onResult(true)
+                } else {
+                    _statusBannerMessage.value = task.exception?.localizedMessage ?: "Google sign-in failed"
+                    onResult(false)
+                }
+            }
     }
 
     override fun onCleared() {

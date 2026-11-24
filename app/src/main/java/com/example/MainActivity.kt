@@ -36,8 +36,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -52,11 +55,14 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.model.RemoteSessionState
 import com.example.ui.components.AccessAuthorizationDialog
+import com.example.ui.screens.AuthScreen
 import com.example.ui.screens.DashboardScreen
 import com.example.ui.screens.PermissionsAndSetupScreen
 import com.example.ui.screens.RemotePlayerScreen
 import com.example.ui.theme.AirLinkTheme
 import com.example.ui.viewmodel.RemoteControlViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
 
 const val ROUTE_DASHBOARD = "dashboard"
@@ -97,14 +103,39 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AirLinkTheme {
-                AirLinkApp()
+                MainRootContainer()
             }
         }
     }
 }
 
 @Composable
-fun AirLinkApp(viewModel: RemoteControlViewModel = viewModel()) {
+fun MainRootContainer() {
+    var currentUser by remember { mutableStateOf(Firebase.auth.currentUser) }
+    val viewModel: RemoteControlViewModel = viewModel()
+
+    if (currentUser == null) {
+        AuthScreen(
+            onGoogleSignInCompleted = { idToken ->
+                viewModel.signInWithGoogle(idToken) { success ->
+                    if (success) {
+                        currentUser = Firebase.auth.currentUser
+                    }
+                }
+            }
+        )
+    } else {
+        key(currentUser!!.uid) {
+            AirLinkApp(viewModel = viewModel, onSignOut = {
+                Firebase.auth.signOut()
+                currentUser = null
+            })
+        }
+    }
+}
+
+@Composable
+fun AirLinkApp(viewModel: RemoteControlViewModel, onSignOut: () -> Unit) {
     val context = LocalContext.current
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
