@@ -52,7 +52,7 @@ jobs:
 
   build-windows:
     name: Build Windows Desktop App
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - name: Checkout repository
@@ -63,16 +63,20 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install dependencies & Build Native Addon
+      - name: Set up MSVC C++ Build Environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install dependencies
         working-directory: companion/windows
-        run: |
-          npm install
-          npm run build-native
+        run: npm install --ignore-scripts
+
+      - name: Build Native Win32 Input Injector Addon
+        working-directory: companion/windows
+        run: npx node-gyp rebuild --msvs_version=2022
 
       - name: Build Windows Installer & Portable Executable
         working-directory: companion/windows
-        run: |
-          npm run dist
+        run: npm run dist
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
