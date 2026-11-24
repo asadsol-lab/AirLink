@@ -44,16 +44,11 @@ jobs:
       - name: Build Debug APK
         run: gradle :app:assembleDebug --no-daemon
 
-      - name: Stage Android APK
-        run: |
-          mkdir -p release_artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk release_artifacts/AirLink-Android.apk
-
       - name: Upload Android Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: release_artifacts/AirLink-Android.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
 
   build-windows:
     name: Build Windows Desktop App
@@ -79,17 +74,11 @@ jobs:
         run: |
           npm run dist
 
-      - name: Stage Windows Executables
-        shell: bash
-        run: |
-          mkdir -p win_artifacts
-          cp companion/windows/dist/*.exe win_artifacts/
-
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-binaries
-          path: win_artifacts/*.exe
+          path: companion/windows/dist/*.exe
 
   publish-release:
     name: Publish Release (APK + Windows EXE)
@@ -119,14 +108,17 @@ jobs:
           TAG="v1.0.${{ github.run_number }}-${SHORT_SHA}"
           mkdir -p final_assets
 
-          # Rename Android APK
-          cp download/android/AirLink-Android.apk "final_assets/AirLink-${TAG}.apk"
+          # Copy and rename Android APK
+          cp download/android/*.apk "final_assets/AirLink-${TAG}.apk"
 
-          # Rename Windows EXEs
-          for f in download/windows/*.exe; do
-            fname=$(basename "$f")
-            cp "$f" "final_assets/${fname}"
-          done
+          # Copy Windows EXEs
+          if [ -d "download/windows" ]; then
+            for f in download/windows/*.exe; do
+              [ -e "$f" ] || continue
+              fname=$(basename "$f")
+              cp "$f" "final_assets/${fname}"
+            done
+          fi
 
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
@@ -137,11 +129,7 @@ jobs:
           gh release create "${{ steps.prep.outputs.tag }}" \
             final_assets/* \
             --title "AirLink ${{ steps.prep.outputs.tag }} (Android + Windows)" \
-            --notes "Automated Multiplatform Release for Android and Windows.
-          
-- **Android APK:** Mobile remote controller & screen capture host.
-- **Windows Desktop:** Complete standalone installer & portable app for PC.
-- **Worldwide WebRTC:** Integrated STUN + TURN relay for cross-country remote control."
+            --notes "Automated Multiplatform Release for Android and Windows with worldwide WebRTC TURN relay."
 
       - name: Keep Only Latest 2 Releases
         env:
